@@ -16,7 +16,7 @@ http://magp.ie/2011/01/10/tidy-and-format-your-php-and-meet-wordpress-standards-
 Installation via PackageControl coming soon...
 
 ## Usage
-ctrl + shift + P and type `Tidy PHP`, or you can use the ctrl + alt + f keybinding.
+ctrl + shift + P and type `Tidy PHP`, or you can use the ctrl + alt + t keybinding.
 
 ## Customize
 Custom settings file (for choosing between original phptidy and wp-phptidy) coming soon.
