@@ -8,24 +8,33 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
         if FILE[-3:] == 'php':
 
+            print('PhpTidy: Ok, this seems to be PHP')            
+
             # path to temp file
             tmpfile = '/tmp/phptidy-sublime-buffer.php'
 
             # path to plugin - <sublime dir>/Packages/PhpTidy
-            # print 'PhpTidy: sys.path[0] %s' % sys.path[0]
-            # print 'PhpTidy: _file_ %s' % __file__
-            # print 'PhpTidy: dirname %s' % os.path.dirname(__file__)
-            # print 'PhpTidy: abspath %s' % os.path.abspath(__file__)
-            # cwd = os.getcwd()
-            print 'PhpTidy: cwd %s' % os.getcwd()
+            print 'PhpTidy: trying to find the path to wp-phptidy.php ...'
+            print 'PhpTidy: sys.path[0]  : %s' % sys.path[0]
+            print 'PhpTidy: _file_       : %s' % __file__
+            print 'PhpTidy: dirname      : %s' % os.path.dirname(__file__)
+            print 'PhpTidy: abspath      : %s' % os.path.abspath(__file__)
+            print 'PhpTidy: working dir  : %s' % os.getcwd()
             pluginpath = os.path.abspath(os.path.dirname(__file__))
-            print 'PhpTidy: running from %s' % pluginpath
-            print('PhpTidy: file seems to be PHP')            
+            print 'PhpTidy: pluginpath   : %s' % pluginpath
 
             # don't know why this hack is neccessary, but sometimes 
             # os.path.abspath(os.path.dirname(__file__)) just returns '/'
             if pluginpath == '/':
                 pluginpath = '.'
+
+            # and sometimes it returns the Packages folder instead of the subdir PhpTidy... why?
+            if os.path.basename(pluginpath) == 'Packages':
+                pluginpath = pluginpath + '/PhpTidy'
+
+            # by now, we should have a working path to wp-phptidy.php
+            print 'PhpTidy: correct path : %s' % pluginpath
+
 
             # get current buffer
             bufferLength  = sublime.Region(0, self.view.size())
@@ -56,7 +65,8 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             newContent = fileHandle.read() 
             fileHandle.close() 
             os.remove( tmpfile )
-            os.remove( '/tmp/.phptidy-sublime-buffer.php.phptidybak~' )
+            if os.path.exists('/tmp/.phptidy-sublime-buffer.php.phptidybak~'):
+                os.remove( '/tmp/.phptidy-sublime-buffer.php.phptidybak~' )
             print('PhpTidy: tmpfile was processed and removed')
 
             # write new content back to buffer
