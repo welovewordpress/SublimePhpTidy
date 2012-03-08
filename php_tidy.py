@@ -1,4 +1,4 @@
-import sublime, sublime_plugin, re, os
+import sublime, sublime_plugin, re, os, sys
 
 class PhpTidyCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -11,10 +11,21 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             # path to temp file
             tmpfile = '/tmp/phptidy-sublime-buffer.php'
 
-            # path to plugin - <sublime dir>/Packages/SublimePhpTidy
+            # path to plugin - <sublime dir>/Packages/PhpTidy
+            # print 'PhpTidy: sys.path[0] %s' % sys.path[0]
+            # print 'PhpTidy: _file_ %s' % __file__
+            # print 'PhpTidy: dirname %s' % os.path.dirname(__file__)
+            # print 'PhpTidy: abspath %s' % os.path.abspath(__file__)
+            # cwd = os.getcwd()
+            print 'PhpTidy: cwd %s' % os.getcwd()
             pluginpath = os.path.abspath(os.path.dirname(__file__))
-            # print 'PhpTidy: running from %s' % pluginpath
+            print 'PhpTidy: running from %s' % pluginpath
             print('PhpTidy: file seems to be PHP')            
+
+            # don't know why this hack is neccessary, but sometimes 
+            # os.path.abspath(os.path.dirname(__file__)) just returns '/'
+            if pluginpath == '/':
+                pluginpath = '.'
 
             # get current buffer
             bufferLength  = sublime.Region(0, self.view.size())
@@ -29,13 +40,13 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
             # call phptidy on tmpfile
             scriptpath = pluginpath + '/wp-phptidy.php'
-            print('PhpTidy: calling script: "%s" replace "%s"' % ( scriptpath, tmpfile ) )
-            retval = os.system( '"%s" replace "%s"' % ( scriptpath, tmpfile ) )
-            cwd = os.getcwd()
+            print('PhpTidy: calling script: /usr/bin/php "%s" replace "%s"' % ( scriptpath, tmpfile ) )
+            retval = os.system( '/usr/bin/php "%s" replace "%s"' % ( scriptpath, tmpfile ) )
             if retval != 0:
                 print('PhpTidy: script returned: %s' % (retval))
                 if retval == 32512:
                     sublime.error_message('PhpTidy cannot find the script at %s.' % (scriptpath))
+                    return
                 else:
                     sublime.error_message('There was an error calling the script at %s. Return value: %s' % (scriptpath,retval))
 
