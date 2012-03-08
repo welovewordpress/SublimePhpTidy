@@ -36,6 +36,11 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             print 'PhpTidy: correct path : %s' % pluginpath
 
 
+            scriptpath = pluginpath + '/wp-phptidy.php'
+            if not os.path.exists( scriptpath ):
+                sublime.error_message('PhpTidy cannot find the script at %s.' % (scriptpath))
+                return
+
             # get current buffer
             bufferLength  = sublime.Region(0, self.view.size())
             bufferContent = self.view.substr(bufferLength).encode('utf-8')
