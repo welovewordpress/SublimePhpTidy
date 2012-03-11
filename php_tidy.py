@@ -1,4 +1,4 @@
-import sublime, sublime_plugin, re, os, sys
+import sublime, sublime_plugin, re, os
 
 class PhpTidyCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -10,14 +10,24 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
             print('PhpTidy: Ok, this seems to be PHP')            
 
-            # path to temp file
-            tmpfile = '/tmp/phptidy-sublime-buffer.php'
-
             # path to plugin - <sublime dir>/Packages/PhpTidy
             pluginpath = sublime.packages_path() + '/PhpTidy'
+            scriptpath = pluginpath + '/wp-phptidy.php'
+
+            # path to temp file
+            tmpfile = '/tmp/phptidy-sublime-buffer.php'
+            phppath = '/usr/bin/php'
+
+            # set different paths for php and temp file on windows
+            if sublime.platform() == 'windows':
+                tmpfile = pluginpath + '/phptidy-sublime-buffer.php'
+                phppath = 'php.exe'
+                retval = os.system( '%s -v' % ( phppath ) )
+                if not retval == 0:
+                    sublime.error_message('PhpTidy cannot find %s. Make sure it is available in your PATH.' % (phppath))
+                    return
 
             # set script and check if it exists
-            scriptpath = pluginpath + '/wp-phptidy.php'
             if not os.path.exists( scriptpath ):
                 sublime.error_message('PhpTidy cannot find the script at %s.' % (scriptpath))
                 return
@@ -35,8 +45,8 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
             # call phptidy on tmpfile
             scriptpath = pluginpath + '/wp-phptidy.php'
-            print('PhpTidy: calling script: /usr/bin/php "%s" replace "%s"' % ( scriptpath, tmpfile ) )
-            retval = os.system( '/usr/bin/php "%s" replace "%s"' % ( scriptpath, tmpfile ) )
+            print('PhpTidy: calling script: %s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
+            retval = os.system( '%s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
             if retval != 0:
                 print('PhpTidy: script returned: %s' % (retval))
                 if retval == 32512:
