@@ -23,8 +23,8 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
                 tmpfile = pluginpath + '/phptidy-sublime-buffer.php'
                 phppath = 'php.exe'
                 retval = os.system( '%s -v' % ( phppath ) )
-                if not retval == 0:
-                    print('PhpTidy: calling php.exe -v returned: %s' % (retval))
+                print('PhpTidy: calling php.exe -v returned: %s' % (retval))
+                if not ((retval == 0) or (retval == 1)):
                     sublime.error_message('PhpTidy cannot find %s. Make sure it is available in your PATH. (Error %s)' % (phppath,retval))
                     return
 
