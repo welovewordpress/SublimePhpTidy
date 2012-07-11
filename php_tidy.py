@@ -24,7 +24,8 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
                 phppath = 'php.exe'
                 retval = os.system( '%s -v' % ( phppath ) )
                 if not retval == 0:
-                    sublime.error_message('PhpTidy cannot find %s. Make sure it is available in your PATH.' % (phppath))
+                    print('PhpTidy: calling php.exe -v returned: %s' % (retval))
+                    sublime.error_message('PhpTidy cannot find %s. Make sure it is available in your PATH. (Error %s)' % (phppath,retval))
                     return
 
             # set script and check if it exists
