@@ -48,7 +48,7 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             scriptpath = pluginpath + '/wp-phptidy.php'
             print('PhpTidy: calling script: %s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
             retval = os.system( '%s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
-            if retval != 0:
+            if not ((retval == 0) or (retval == 1)):
                 print('PhpTidy: script returned: %s' % (retval))
                 if retval == 32512:
                     sublime.error_message('PhpTidy cannot find the script at %s.' % (scriptpath))
