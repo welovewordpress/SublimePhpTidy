@@ -18,6 +18,9 @@ ctrl + shift + P and type `Tidy PHP`, or you can use the ctrl + alt + T keybindi
 ## Customize
 Custom settings file (for choosing between original phptidy and wp-phptidy) coming soon.
 
+## Known issues
+Running phptidy on your file will clear all bookmarks and foldings.
+
 ## Install
 
 ### Package Control
