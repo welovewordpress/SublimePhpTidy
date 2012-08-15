@@ -6,8 +6,8 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
         print('PhpTidy: invoked on file: %s' % (FILE))
 
-        #if FILE[-3:] == 'php':
-        if FILE[-3:] == 'php' or 'module' or 'inc':
+        #Probably a good idea to move the supported filetypes to a settings file eventually.
+        if os.path.splitext(FILE)[1] in ['.php', '.module', '.inc']:
     
             print('PhpTidy: Ok, this seems to be PHP')            
 
