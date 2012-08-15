@@ -3,11 +3,13 @@ import sublime, sublime_plugin, re, os
 class PhpTidyCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         FILE = self.view.file_name()
+        settings = sublime.load_settings('PhpTidy.sublime-settings')
 
+        supported_filetypes = settings.get('filetypes') or ['.php', '.module', '.inc']
+        
         print('PhpTidy: invoked on file: %s' % (FILE))
 
-        #if FILE[-3:] == 'php':
-        if FILE[-3:] == 'php' or 'module' or 'inc':
+        if os.path.splitext(FILE)[1] in supported_filetypes:
     
             print('PhpTidy: Ok, this seems to be PHP')            
 

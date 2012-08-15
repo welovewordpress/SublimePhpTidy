@@ -1,0 +1,4 @@
+{
+   //Filetypes that PhpTidy can run on.
+   "filetypes": [".php", ".module", ".inc"]
+}
