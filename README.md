@@ -16,7 +16,7 @@ http://magp.ie/2011/01/10/tidy-and-format-your-php-and-meet-wordpress-standards-
 ctrl + shift + P and type `Tidy PHP`, or you can use the ctrl + alt + T keybinding.
 
 ## Customize
-Custom settings file (for choosing between original phptidy and wp-phptidy) coming soon.
+Custom settings file (for choosing between original phptidy and wp-phptidy).
 
 ## Known issues
 Running phptidy on your file will clear all bookmarks and foldings.
