@@ -13,9 +13,17 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
     
             print('PhpTidy: Ok, this seems to be PHP')            
 
+            # set tidy type
+            tidy_type = settings.get('tidytype') or 'wp'
+
+            if tidy_type == 'wp':
+                tidy_file = 'wp-phptidy.php'
+            else:
+                tidy_file = 'phptidy.php'
+
             # path to plugin - <sublime dir>/Packages/PhpTidy
             pluginpath = sublime.packages_path() + '/PhpTidy'
-            scriptpath = pluginpath + '/wp-phptidy.php'
+            scriptpath = pluginpath + '/' + tidy_file
 
             # path to temp file
             tmpfile = '/tmp/phptidy-sublime-buffer.php'
@@ -48,7 +56,7 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
 
             # call phptidy on tmpfile
-            scriptpath = pluginpath + '/wp-phptidy.php'
+            scriptpath = pluginpath + '/' + tidy_file
             print('PhpTidy: calling script: %s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
             retval = os.system( '%s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
             if not ((retval == 0) or (retval == 1)):
