@@ -32,6 +32,6 @@ The easiest way to install this is with [Package Control](http://wbond.net/subli
  * Select "Package Control: Install Package" (it'll take a few seconds)
  * Select PhpTidy when the list appears.
 
-Package Control will automatically keep Git up to date with the latest version.
+Package Control will automatically keep phptidy up to date with the latest version.
 
 If you have some problems or improvements with it, contact me via GitHub.
