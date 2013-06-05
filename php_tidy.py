@@ -6,12 +6,12 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
         settings = sublime.load_settings('PhpTidy.sublime-settings')
 
         supported_filetypes = settings.get('filetypes') or ['.php', '.module', '.inc']
-        
+
         print('PhpTidy: invoked on file: %s' % (FILE))
 
         if os.path.splitext(FILE)[1] in supported_filetypes:
-    
-            print('PhpTidy: Ok, this seems to be PHP')            
+
+            print('PhpTidy: Ok, this seems to be PHP')
 
             # set tidy type
             tidy_type = settings.get('tidytype') or 'wp'
@@ -49,9 +49,9 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             bufferContent = self.view.substr(bufferLength).encode('utf-8')
 
             # write tmpfile
-            fileHandle = open ( tmpfile, 'w' ) 
-            fileHandle.write ( bufferContent ) 
-            fileHandle.close() 
+            fileHandle = open ( tmpfile, 'wb' )
+            fileHandle.write ( bufferContent )
+            fileHandle.close()
             print('PhpTidy: buffer written to tmpfile: %s' % (tmpfile))
 
 
@@ -69,9 +69,9 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
 
 
             # read tmpfile and delete
-            fileHandle = open ( tmpfile, 'r' ) 
-            newContent = fileHandle.read() 
-            fileHandle.close() 
+            fileHandle = open ( tmpfile, 'r' )
+            newContent = fileHandle.read()
+            fileHandle.close()
             os.remove( tmpfile )
             print('PhpTidy: tmpfile was processed and removed')
 
@@ -103,4 +103,4 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
         panel.end_edit(edit)
 
     def fixup(self, string):
-        return re.sub(r'\r\n|\r', '\n', string.decode('utf-8'))
+        return re.sub(r'\r\n|\r', '\n', string)
