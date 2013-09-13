@@ -108,8 +108,8 @@ $indent = true;
 ///////////// END OF DEFAULT CONFIGURATION ////////////////
 
 
-define( 'CONFIGFILE', "./.phptidy-config.php" );
-define( 'CACHEFILE', "./.phptidy-cache" );
+define( 'CONFIGFILE', dirname(__FILE__) . "/.wp-phptidy-config.php" );
+define( 'CACHEFILE', dirname(__FILE__) . "/.phptidy-cache" );
 
 
 error_reporting( E_ALL );
