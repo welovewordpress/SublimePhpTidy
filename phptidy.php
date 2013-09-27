@@ -7,7 +7,7 @@
  *
  * PHP version >= 5.0
  *
- * @copyright 2003-2008 Magnus Rosenbaum
+ * @copyright 2003-2013 Magnus Rosenbaum
  * @license   GPL v2
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * @version 2.9 (2009-01-07)
+ * @version 2.11 (2013-05-07)
  * @author  Magnus Rosenbaum <phptidy@cmr.cx>
  * @package phptidy
  */
@@ -43,6 +43,10 @@ $project_files = array();
 // Wildcards are not allowed here.
 // Example: array("inc/external_lib.php");
 $project_files_excludes = array();
+
+// diff command
+// Examples: "diff", "colordiff", "diff -u", "colordiff -u"
+$diff = "colordiff -u";
 
 // The automatically added author in the phpdoc file docblocks
 // If left empty no new @author doctags will be added.
@@ -85,21 +89,21 @@ $encoding = "";
 $docrootvars = array();
 
 // Enable the single cleanup functions
-$fix_token_case = true;
+$fix_token_case             = true;
 $fix_builtin_functions_case = true;
-$replace_inline_tabs = true;
-$replace_phptags = true;
-$replace_shell_comments = true;
-$fix_statement_brackets = true;
-$fix_separation_whitespace = true;
-$fix_comma_space = true;
-$add_file_docblock = true;
-$add_function_docblocks = true;
-$add_doctags = true;
-$fix_docblock_format = true;
-$fix_docblock_space = true;
-$add_blank_lines = true;
-$indent = true;
+$replace_inline_tabs        = true;
+$replace_phptags            = true;
+$replace_shell_comments     = true;
+$fix_statement_brackets     = true;
+$fix_separation_whitespace  = true;
+$fix_comma_space            = true;
+$add_file_docblock          = true;
+$add_function_docblocks     = true;
+$add_doctags                = true;
+$fix_docblock_format        = true;
+$fix_docblock_space         = true;
+$add_blank_lines            = true;
+$indent                     = true;
 
 ///////////// END OF DEFAULT CONFIGURATION ////////////////
 
@@ -285,7 +289,7 @@ foreach ( $files as $file ) {
 			echo "Error: The temporary file '".$tmpfile."' could not be saved.\n";
 			exit(1);
 		}
-		system("echo -ne '\\033[01;31m'; diff -u ".$file." ".$tmpfile." 2>&1; echo -ne '\\033[00m'");
+		system($diff." ".$file." ".$tmpfile." 2>&1");
 	}
 
 	// Process source code
@@ -346,7 +350,7 @@ foreach ( $files as $file ) {
 			echo "Error: The temporary file '".$tmpfile."' could not be saved.\n";
 			exit(1);
 		}
-		system("echo -ne '\\033[01;34m'; diff -u ".$file." ".$tmpfile." 2>&1; echo -ne '\\033[00m'");
+		system($diff." ".$file." ".$tmpfile." 2>&1");
 
 		break;
 	case "source":
@@ -425,14 +429,14 @@ function phptidy($source) {
 	}
 
 	// Simple formatting
-	if ($GLOBALS['fix_token_case']) fix_token_case($tokens);
+	if ($GLOBALS['fix_token_case'])             fix_token_case($tokens);
 	if ($GLOBALS['fix_builtin_functions_case']) fix_builtin_functions_case($tokens);
-	if ($GLOBALS['replace_inline_tabs']) replace_inline_tabs($tokens);
-	if ($GLOBALS['replace_phptags']) replace_phptags($tokens);
-	if ($GLOBALS['replace_shell_comments']) replace_shell_comments($tokens);
-	if ($GLOBALS['fix_statement_brackets']) fix_statement_brackets($tokens);
-	if ($GLOBALS['fix_separation_whitespace']) fix_separation_whitespace($tokens);
-	if ($GLOBALS['fix_comma_space']) fix_comma_space($tokens);
+	if ($GLOBALS['replace_inline_tabs'])        replace_inline_tabs($tokens);
+	if ($GLOBALS['replace_phptags'])            replace_phptags($tokens);
+	if ($GLOBALS['replace_shell_comments'])     replace_shell_comments($tokens);
+	if ($GLOBALS['fix_statement_brackets'])     fix_statement_brackets($tokens);
+	if ($GLOBALS['fix_separation_whitespace'])  fix_separation_whitespace($tokens);
+	if ($GLOBALS['fix_comma_space'])            fix_comma_space($tokens);
 
 	// PhpDocumentor
 	if ($GLOBALS['add_doctags']) {
@@ -441,13 +445,13 @@ function phptidy($source) {
 		//print_r($paramtags);
 		//print_r($returntags);
 	}
-	if ($GLOBALS['add_file_docblock']) add_file_docblock($tokens);
+	if ($GLOBALS['add_file_docblock'])      add_file_docblock($tokens);
 	if ($GLOBALS['add_function_docblocks']) add_function_docblocks($tokens);
 	if ($GLOBALS['add_doctags']) {
 		add_doctags($tokens, $usestags, $paramtags, $returntags, $GLOBALS['seetags']);
 	}
 	if ($GLOBALS['fix_docblock_format']) fix_docblock_format($tokens);
-	if ($GLOBALS['fix_docblock_space']) fix_docblock_space($tokens);
+	if ($GLOBALS['fix_docblock_space'])  fix_docblock_space($tokens);
 
 	if ($GLOBALS['add_blank_lines']) add_blank_lines($tokens);
 
@@ -1349,7 +1353,11 @@ function add_blank_lines(&$tokens) {
 
 			// Remember the type of control structure
 			if ( in_array($token[0], array(T_IF, T_ELSEIF, T_WHILE, T_FOR, T_FOREACH, T_SWITCH, T_FUNCTION, T_CLASS)) ) {
-				$control_structure = $token[0];
+				if ( $token[0] === T_FUNCTION and isset($tokens[$key+1]) and $tokens[$key+1] === "(" ) {
+					$control_structure = "anonymous_function";
+				} else {
+					$control_structure = $token[0];
+				}
 				continue;
 			}
 
@@ -1996,6 +2004,9 @@ function collect_doctags(&$tokens) {
 
 				$k = $key + 1;
 
+				// Anonymous function
+				if ( $tokens[$k] === "(" ) break;
+
 				if ( is_string($tokens[$k]) or $tokens[$k][0] !== T_WHITESPACE ) {
 					possible_syntax_error($tokens, $k, "No whitespace found between function keyword and function name");
 					break;
@@ -2204,6 +2215,9 @@ function add_function_docblocks(&$tokens) {
 	foreach ( $tokens as $key => &$token ) {
 
 		if ( is_string($token) or $token[0] !== T_FUNCTION ) continue;
+
+		// No DocBlock for anonymous functions
+		if ( isset($tokens[$key+1]) and $tokens[$key+1]==="(" ) continue;
 
 		// Find beginning of the function declaration
 		$k = $key;
