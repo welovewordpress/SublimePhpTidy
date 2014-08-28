@@ -1,5 +1,17 @@
 [
     {
+        "id": "tools",
+        "caption": "Tools",
+        "children":
+        [
+            {
+                "id": "php_tidy_js",
+                "caption": "Run PHP Tidy",
+                "command": "php_tidy"
+            }
+        ]
+    },
+    {
         "caption": "Preferences",
         "mnemonic": "n",
         "id": "preferences",
