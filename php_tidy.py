@@ -1,7 +1,12 @@
-import sublime, sublime_plugin, re, os
+import sublime
+import sublime_plugin
+import re
+import os
+import subprocess
 
 class PhpTidyCommand(sublime_plugin.TextCommand):
     def run(self, edit):
+
         FILE = self.view.file_name()
         settings = sublime.load_settings('PhpTidy.sublime-settings')
 
@@ -33,11 +38,17 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             if sublime.platform() == 'windows':
                 tmpfile = pluginpath + '/phptidy-sublime-buffer.php'
                 phppath = 'php.exe'
-                retval = os.system( '%s -v' % ( phppath ) )
-                print('PhpTidy: calling php.exe -v returned: %s' % (retval))
-                if not ((retval == 0) or (retval == 1)):
-                    sublime.error_message('PhpTidy cannot find %s. Make sure it is available in your PATH. (Error %s)' % (phppath,retval))
-                    return
+
+                # hide shell window in windows
+                cmd = '%s -v' % ( phppath )
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
+                p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=startupinfo)
+                stdout, stderr = p.communicate()
+                if len(stderr) != 0:
+                    sublime.error_message('PhpTidy cannot find php.exe. Make sure it is available in your PATH.')
+
 
             # set script and check if it exists
             if not os.path.exists( scriptpath ):
@@ -58,15 +69,16 @@ class PhpTidyCommand(sublime_plugin.TextCommand):
             # call phptidy on tmpfile
             scriptpath = pluginpath + '/' + tidy_file
             print('PhpTidy: calling script: %s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
-            retval = os.system( '%s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile ) )
-            if not ((retval == 0) or (retval == 1)):
-                print('PhpTidy: script returned: %s' % (retval))
-                if retval == 32512:
-                    sublime.error_message('PhpTidy cannot find the script at %s.' % (scriptpath))
-                    return
-                else:
-                    sublime.error_message('There was an error calling the script at %s. Return value: %s' % (scriptpath,retval))
 
+            # hide shell window in windows
+            cmd = '%s "%s" replace "%s"' % ( phppath, scriptpath, tmpfile )
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=startupinfo)
+            stdout, stderr = p.communicate()
+            if len(stderr) != 0:
+                sublime.error_message('There was an error calling the script' )
 
             # read tmpfile and delete
             fileHandle = open ( tmpfile, 'r' )
