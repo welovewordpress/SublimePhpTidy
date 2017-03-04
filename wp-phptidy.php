@@ -1244,6 +1244,7 @@ function fix_docblock_format( &$tokens ) {
 		$doctags_started = false;
 		$last_line = false;
 		$param_max_variable_length = 0;
+		$type_max_variable_length = 0;
 		foreach ( $lines_orig as $line ) {
 			$line = trim( $line );
 			// Strip empty lines
@@ -1282,9 +1283,14 @@ function fix_docblock_format( &$tokens ) {
 						$doctags_started = true;
 					}
 
-					// DocTag format
-					if ( preg_match( '/^\* @param(\s+[^\s\$]*)?\s+(&?\$[^\s]+)/', $line, $matches ) ) {
-						$param_max_variable_length = max( $param_max_variable_length, strlen( $matches[2] ) );
+					// DocTag variable length
+					if ( preg_match( '/^\* @param(\s+[^\s\$]*)?\s+(&?\$[^\s]+)/', $line, $variable ) ) {
+						$param_max_variable_length = max( $param_max_variable_length, strlen( $variable[2] ) );
+					}
+
+					// DocTag type length
+					if ( preg_match( '/^\* @param(\s+([^\s\$]*))?(\s+(&?\$[^\s]+))?(.*)$/', $line, $type ) ) {
+						$type_max_variable_length = max( $type_max_variable_length, strlen( $type[2] ) );
 					}
 
 				}
@@ -1299,9 +1305,15 @@ function fix_docblock_format( &$tokens ) {
 			// DocTag format
 			if ( preg_match( '/^\* @param(\s+([^\s\$]*))?(\s+(&?\$[^\s]+))?(.*)$/', $line, $matches ) ) {
 				$line = "* @param ";
-				if ( $matches[2] ) $line .= str_pad( $matches[2], 7 ); else $line .= "unknown";
+				if ( $matches[2] ) {
+					$line .= str_pad( $matches[2], $type_max_variable_length );
+				} else {
+					$line .= "unknown";
+				}
 				$line .= " ";
-				if ( $matches[4] ) $line .= str_pad( $matches[4], $param_max_variable_length )." ";
+				if ( $matches[4] ) {
+					$line .= str_pad( $matches[4], $param_max_variable_length ) . " ";
+				}
 				$line .= trim( $matches[5] );
 				$lines[$l] = $line;
 			}
