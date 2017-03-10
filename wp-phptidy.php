@@ -97,6 +97,8 @@ $fix_statement_brackets = true;
 $fix_separation_whitespace = true;
 $fix_comma_space = true;
 $fix_round_bracket_space = true;
+$fix_square_bracket_space = true;
+$add_operator_space = true;
 $add_file_docblock = false;
 $add_function_docblocks = false;
 $add_doctags = false;
@@ -442,6 +444,8 @@ function phptidy( $source ) {
 	if ( $GLOBALS['fix_separation_whitespace'] ) fix_separation_whitespace( $tokens );
 	if ( $GLOBALS['fix_comma_space'] ) fix_comma_space( $tokens );
 	if ( $GLOBALS['fix_round_bracket_space'] ) fix_round_bracket_space( $tokens );
+	if ( $GLOBALS['fix_square_bracket_space'] ) fix_square_bracket_space( $tokens );
+	if ( $GLOBALS['add_operator_space'] ) add_operator_space( $tokens );
 
 	// PhpDocumentor
 	if ( $GLOBALS['add_doctags'] ) {
@@ -1221,12 +1225,241 @@ function fix_round_bracket_space( &$tokens ) {
 			array_splice( $tokens, $key, 0, array(
 					array( T_WHITESPACE, " " )
 				) );
+/**
+ * Add one space before and after some operators.
+ *
+ * Copied from https://github.com/cmrcx/phptidy
+ *
+ *
+ * @param array $tokens (reference)
+ */
+function add_operator_space( &$tokens ) {
+
+	// Only operators, which don't require the spaces around
+	static $operators = array(
+		// assignment
+		"=",
+		array( T_PLUS_EQUAL,  "+=" ),
+		array( T_MINUS_EQUAL, "-=" ),
+		array( T_MUL_EQUAL,   "*=" ),
+		array( T_DIV_EQUAL,   "/=" ),
+		array( T_MOD_EQUAL,   "%=" ),
+		array( T_AND_EQUAL,   "&=" ),
+		array( T_OR_EQUAL,    "|=" ),
+		array( T_XOR_EQUAL,   "^=" ),
+		// comparison
+		array( T_IS_EQUAL,         "==" ),
+		array( T_IS_IDENTICAL,     "===" ),
+		array( T_IS_NOT_EQUAL,     "!=" ),
+		array( T_IS_NOT_EQUAL,     "<>" ),
+		array( T_IS_NOT_IDENTICAL, "!==" ),
+		"<",
+		">",
+		array( T_IS_SMALLER_OR_EQUAL, "<=" ),
+		array( T_IS_GREATER_OR_EQUAL, ">=" ),
+		// logical
+		"!",
+		array( T_BOOLEAN_AND, "&&" ),
+		array( T_BOOLEAN_OR,  "||" ),
+		// string
+		".",
+		array( T_CONCAT_EQUAL, ".=" ),
+	);
+
+	foreach ( $tokens as $key => &$token ) {
+		if ( in_array( $token, $operators ) ) {
+
+			if (
+				// The next token is no whitespace
+				! ( isset( $tokens[ $key+1 ][0] ) and $tokens[ $key+1 ][0] === T_WHITESPACE )
+			) {
+				// Insert one space after
+				array_splice( $tokens, $key+1, 0, array(
+						array( T_WHITESPACE, " " )
+					) );
+			}
+
+			if (
+				// The token before is no whitespace
+				! ( isset( $tokens[ $key-1 ][0] ) and $tokens[ $key-1 ][0] === T_WHITESPACE )
+			) {
+				// Insert one space before
+				array_splice( $tokens, $key, 0, array(
+						array( T_WHITESPACE, " " )
+					) );
+			}
+
 		}
 	}
+
+}
+
+/**
+ * Returns bracket indexes from tokens.
+ *
+ * @param array $tokens Tokens.
+ * @return array         Token indexes.
+ */
+function get_square_brackets( $tokens ) {
+
+	$whitespace_tokens = array(
+		T_VARIABLE,
+		T_LNUMBER,
+		T_CONSTANT_ENCAPSED_STRING,
+	);
+
+	// Array with opening brackets '['.
+	$brackets = array();
+
+	// Get opening brackets "[".
+	foreach ( $tokens as $key => $token ) {
+		$k = $key;
+
+		if ( ! ( is_string( $token ) && (  '[' === $token  ) ) ) {
+			continue;
+		}
+
+		// If the previous token is a variable.
+		$is_variable = isset( $tokens[ $key - 1 ][0] ) && ( T_VARIABLE === $tokens[ $key - 1 ][0] );
+		if ( ! $is_variable ) {
+			continue;
+		}
+
+		// True if the next token is not a whitespace token.
+		$next = isset( $tokens[ $k + 1 ][0] ) && ( T_WHITESPACE !== $tokens[ $k + 1 ][0] );
+
+		if ( $next ) {
+			$next = $tokens[ $k + 1 ];
+
+			// Continue if the next token is a closing bracket.
+			if ( is_string( $next ) && ( ']' === $next ) ) {
+				continue;
+			}
+		} else {
+			// Get the next non whitespace token.
+			do {
+				++$k;
+			} while ( isset( $tokens[ $k ] ) and ( T_WHITESPACE === $tokens[ $k ][0] ) );
+			$next = $tokens[ $k ];
+		}
+
+		// Continue if the next (non whitespace) token is not a string, number or variable.
+		if ( ! ( $next && ( isset( $next[0] ) && in_array( $next[0], $whitespace_tokens ) ) ) ) {
+			continue;
+		}
+
+		// Store square bracket index and type.
+		$brackets[ $key ] = $next[0];
+	}
+
+	return $brackets;
 }
 
 
 /**
+ * Fixes spaces inside brackets.
+ *
+ * Adds one space for brackets with a variable.
+ * Removes spaces for brackets with strings
+ *
+ * @param array $tokens Tokens (passed by reference).
+ */
+function fix_square_bracket_space( &$tokens ) {
+
+	// Get all bracket indexes.
+	$brackets    = get_square_brackets( $tokens );
+	$brackets    = array_reverse( $brackets, true );
+
+	// Process opening brackets "[".
+	foreach ( $brackets as $key => $type ) {
+		if ( '[' !== $tokens[ $key ] ) {
+			continue;
+		}
+
+		$u = $key;
+		switch ( $type ) {
+			case  T_VARIABLE:
+			// If the next token is not a whitespace token.
+			if ( isset( $tokens[ $key + 1 ][0] ) && ( T_WHITESPACE !== $tokens[ $key + 1 ][0] ) ) {
+				// Add a space after the bracket, before a variable.
+				array_splice( $tokens, $key + 1, 0, array( array( T_WHITESPACE, ' ' ) ) );
+			}
+			break;
+			case  T_LNUMBER:
+			case  T_CONSTANT_ENCAPSED_STRING:
+			// Remove leading whitespace for numbers and strings after the bracket.
+			do {
+				if ( isset( $tokens[ $u ][0] ) && ( T_WHITESPACE === $tokens[ $u ][0] ) ) {
+					unset( $tokens[ $u ] );
+				}
+				++$u;
+			} while ( isset( $tokens[ $u ] ) and ( T_WHITESPACE === $tokens[ $u ][0] ) );
+			break;
+		}
+	}
+
+	// Reset the indexes.
+	$tokens      = array_values( $tokens );
+	$token_count = count( $tokens );
+
+	// Get the bracket indexes again.
+	$brackets = get_square_brackets( $tokens );
+	$brackets = array_reverse( $brackets, true );
+
+	// Process closing brackets "[".
+	foreach ( $brackets as $key => $type ) {
+		if ( ! ( isset( $tokens[ $key ] ) && ( '[' === $tokens[ $key ] ) ) ) {
+			continue;
+		}
+
+		$brackets_count = 0;
+
+		for ( $k = $key; $k < $token_count; $k++ ) {
+			$u = $k;
+
+			if ( ! isset( $tokens[ $k ] ) ) {
+				break;
+			}
+
+			if ( is_string( $tokens[ $k ] ) ) {
+				if ( '[' === $tokens[ $k ] ) {
+					++$brackets_count;
+				} elseif ( ']' === $tokens[ $k ] ) {
+					--$brackets_count;
+				}
+			}
+
+			if ( ! $brackets_count ) {
+
+				switch ( $type ) {
+
+					case  T_LNUMBER:
+					case  T_CONSTANT_ENCAPSED_STRING:
+					// Remove trailing whitespace for numbers and strings before the bracket.
+					do {
+						if ( isset( $tokens[ $u ][0] ) && ( T_WHITESPACE === $tokens[ $u ][0] ) ) {
+							unset( $tokens[ $u ] );
+						}
+						--$u;
+					} while ( isset( $tokens[ $u ] ) and ( T_WHITESPACE === $tokens[ $u ][0] ) );
+					break;
+					case  T_VARIABLE:
+					// If the previous token is not a whitespace token.
+					if ( isset( $tokens[ $k - 1 ][0] ) && ( T_WHITESPACE !== $tokens[ $k - 1 ][0] ) ) {
+						// Add a space before the bracket.
+						array_splice( $tokens, $k, 0, array( array( T_WHITESPACE, ' ' ) ) );
+					}
+					break;
+				}
+
+				// Processed the closing bracket.
+				break;
+			}
+		}
+	}
+
+	$tokens = array_values( $tokens );
+}
  * Fixes the format of a DocBlock
  *
  * @param array   $tokens (reference)
