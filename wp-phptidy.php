@@ -1859,22 +1859,22 @@ function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, 
 	}
 
 	// One indentation level less for "switch ... case ... default"
-	if (
-		isset( $tokens[$key+1] ) and
-		is_array( $tokens[$key+1] ) and (
-			$tokens[$key+1][0] === T_CASE or
-			$tokens[$key+1][0] === T_DEFAULT or (
-				isset( $tokens[$key+2] ) and
-				is_array( $tokens[$key+2] ) and (
-					$tokens[$key+2][0] === T_CASE or
-					$tokens[$key+2][0] === T_DEFAULT
-				) and
-				// T_WHITESPACE without \n first
-				$tokens[$key+1][0] === T_WHITESPACE and
-				strpos( $tokens[$key+1][1], "\n" )===false
-			)
-		)
-	) --$indent;
+	// if (
+	//  isset( $tokens[ $key+1] ) and
+	//  is_array( $tokens[ $key+1] ) and (
+	//   $tokens[ $key+1][0] === T_CASE or
+	//   $tokens[ $key+1][0] === T_DEFAULT or (
+	//    isset( $tokens[ $key+2] ) and
+	//    is_array( $tokens[ $key+2] ) and (
+	//     $tokens[ $key+2][0] === T_CASE or
+	//     $tokens[ $key+2][0] === T_DEFAULT
+	//    ) and
+	//    // T_WHITESPACE without \n first
+	//    $tokens[ $key+1][0] === T_WHITESPACE and
+	//    strpos( $tokens[ $key+1][1], "\n" )===false
+	//   )
+	//  )
+	// ) --$indent;
 
 	// One indentation level less for an opening curly brace on a seperate line
 	if (
