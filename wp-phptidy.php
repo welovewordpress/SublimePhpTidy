@@ -274,7 +274,7 @@ foreach ( $files as $file ) {
 
 	// Cache
 	$md5sum = md5( $source_orig );
-	if ( $use_cache and isset( $cache['md5sums'][$file] ) and $md5sum == $cache['md5sums'][$file] ) {
+	if ( $use_cache and isset( $cache['md5sums'][ $file ] ) and $md5sum == $cache['md5sums'][ $file ] ) {
 		// Original file has not changed, so we don't process it
 		verbose( "  File unchanged since last processing.\n" );
 		continue;
@@ -310,7 +310,7 @@ foreach ( $files as $file ) {
 	if ( $count == 1 ) {
 		verbose( "  Processed without changes.\n" );
 		// Write md5sum of the unchanged file into cache
-		$cache['md5sums'][$file] = $md5sum;
+		$cache['md5sums'][ $file ] = $md5sum;
 		continue;
 	}
 
@@ -341,7 +341,7 @@ foreach ( $files as $file ) {
 		++$replaced;
 
 		// Write new md5sum into cache
-		$cache['md5sums'][$file] = md5( $source );
+		$cache['md5sums'][ $file ] = md5( $source );
 
 		break;
 		case "diff":
@@ -1301,10 +1301,13 @@ function add_operator_space( &$tokens ) {
 }
 
 /**
- * Returns bracket indexes from tokens.
+ * Returns opening square bracket indexes from tokens.
+ *
+ * Returns the opening brackets for brackets that are empty, or
+ * contain a variable or string.
  *
  * @param array $tokens Tokens.
- * @return array         Token indexes.
+ * @return array        Opening square bracket token indexes.
  */
 function get_square_brackets( $tokens ) {
 
@@ -1325,12 +1328,6 @@ function get_square_brackets( $tokens ) {
 			continue;
 		}
 
-		// If the previous token is a variable.
-		$is_variable = isset( $tokens[ $key - 1 ][0] ) && ( T_VARIABLE === $tokens[ $key - 1 ][0] );
-		if ( ! $is_variable ) {
-			continue;
-		}
-
 		// True if the next token is not a whitespace token.
 		$next = isset( $tokens[ $k + 1 ][0] ) && ( T_WHITESPACE !== $tokens[ $k + 1 ][0] );
 
@@ -1347,6 +1344,13 @@ function get_square_brackets( $tokens ) {
 				++$k;
 			} while ( isset( $tokens[ $k ] ) and ( T_WHITESPACE === $tokens[ $k ][0] ) );
 			$next = $tokens[ $k ];
+
+			// If the next non withespace token is a closing bracket.
+			if ( $next && ( is_string( $next ) && ( ']' === $next ) ) ) {
+				// Store the opening square bracket and continue.
+				$brackets[ $key ] = 'EMPTY_SQUARE_BRACKETS';
+				continue;
+			}
 		}
 
 		// Continue if the next (non whitespace) token is not a string, number or variable.
@@ -1391,9 +1395,10 @@ function fix_square_bracket_space( &$tokens ) {
 				array_splice( $tokens, $key + 1, 0, array( array( T_WHITESPACE, ' ' ) ) );
 			}
 			break;
+			case  'EMPTY_SQUARE_BRACKETS':
 			case  T_LNUMBER:
 			case  T_CONSTANT_ENCAPSED_STRING:
-			// Remove leading whitespace for numbers and strings after the bracket.
+			// Remove leading whitespace for empty brackets, and numbers and strings.
 			do {
 				if ( isset( $tokens[ $u ][0] ) && ( T_WHITESPACE === $tokens[ $u ][0] ) ) {
 					unset( $tokens[ $u ] );
@@ -1412,7 +1417,7 @@ function fix_square_bracket_space( &$tokens ) {
 	$brackets = get_square_brackets( $tokens );
 	$brackets = array_reverse( $brackets, true );
 
-	// Process closing brackets "[".
+	// Process closing brackets "]".
 	foreach ( $brackets as $key => $type ) {
 		if ( ! ( isset( $tokens[ $key ] ) && ( '[' === $tokens[ $key ] ) ) ) {
 			continue;
