@@ -209,8 +209,8 @@ foreach ( $project_files_excludes as $file_exclude ) {
 foreach ( $files as $key => $file ) {
 	// Ignore backups and results from phptidy
 	if (
-		substr( $file, - 12 ) == ".phptidybak~" or
-		substr( $file, - 12 ) == ".phptidy.php"
+		substr( $file, -12 ) == ".phptidybak~" or
+		substr( $file, -12 ) == ".phptidy.php"
 	) {
 		unset( $files[ $key ] );
 		continue;
@@ -475,13 +475,13 @@ function phptidy( $source ) {
 	// Strip trailing whitespace
 	$source = preg_replace( "/[ \t]+\n/", "\n", $source );
 
-	if ( substr( $source, - 1 ) != "\n" ) {
+	if ( substr( $source, -1 ) != "\n" ) {
 		// Add one line break at the end of the file
 		// http://pear.php.net/manual/en/standards.file.php
 		$source .= "\n";
 	} else {
 		// Strip empty lines at the end of the file
-		while ( substr( $source, - 2 ) == "\n\n" ) $source = substr( $source, 0, - 1 );
+		while ( substr( $source, -2 ) == "\n\n" ) $source = substr( $source, 0, -1 );
 	}
 
 	return $source;
@@ -596,7 +596,7 @@ function tokens_rtrim( &$tokens ) {
 		isset( $tokens[ $k = count( $tokens ) - 1 ][0] ) and
 		$tokens[ $k ][0] === T_WHITESPACE
 	) {
-		array_splice( $tokens, - 1 );
+		array_splice( $tokens, -1 );
 	}
 }
 
@@ -1020,7 +1020,7 @@ function fix_statement_brackets( &$tokens ) {
 		}
 
 		// Remove the outermost brackets
-		$tokens_arg = array_slice( $tokens_arg, 1, - 1 );
+		$tokens_arg = array_slice( $tokens_arg, 1, -1 );
 
 		tokens_ltrim( $tokens_arg );
 		tokens_rtrim( $tokens_arg );
@@ -1180,7 +1180,7 @@ function fix_comma_space( &$tokens ) {
 		if ( ! is_string( $token ) ) continue;
 		if (
 			// If the current token ends with a comma...
-			substr( $token, - 1 ) === "," and
+			substr( $token, -1 ) === "," and
 			// ...and the next token is no whitespace
 			! ( isset( $tokens[ $key + 1 ][0] ) and $tokens[ $key + 1 ][0] === T_WHITESPACE )
 		) {
@@ -1301,7 +1301,7 @@ function add_operator_space( &$tokens ) {
 }
 
 /**
- * Returns opening square bracket indexes from tokens.
+ * Returns opening bracket indexes from tokens.
  *
  * Returns the opening brackets for brackets that are empty, or
  * contain a variable or string.
@@ -1417,7 +1417,7 @@ function fix_square_bracket_space( &$tokens ) {
 	$brackets = get_square_brackets( $tokens );
 	$brackets = array_reverse( $brackets, true );
 
-	// Process closing brackets "]".
+	// Process closing brackets "[".
 	foreach ( $brackets as $key => $type ) {
 		if ( ! ( isset( $tokens[ $key ] ) && ( '[' === $tokens[ $key ] ) ) ) {
 			continue;
@@ -1605,7 +1605,7 @@ function fix_docblock_space( &$tokens ) {
 			// Add empty lines before the DocBlock
 			if ( $tokens[ $key - 1 ][0] === T_WHITESPACE ) {
 				$n = 2;
-				if ( substr( token_text( $tokens[ $key - 2 ] ), - 1 ) == "\n" ) --$n;
+				if ( substr( token_text( $tokens[ $key - 2 ] ), -1 ) == "\n" ) --$n;
 				// At least 2 empty lines before the docblock of a function
 				if ( $tokens[ $key + 2 ][0] === T_FUNCTION ) ++$n;
 				if ( strpos( $tokens[ $key - 1 ][1], str_repeat( "\n", $n ) ) === false ) {
@@ -2023,7 +2023,7 @@ function strip_closetag_indenting( &$tokens ) {
 		if (
 			// T_CLOSE_TAG with following \n
 			$token[0] === T_CLOSE_TAG and
-			substr( $token[1], - 1 ) === "\n"
+			substr( $token[1], -1 ) === "\n"
 		) {
 			if (
 				// T_WHITESPACE or T_COMMENT before with \n at the end
@@ -2112,7 +2112,7 @@ function find_includes( &$seetags, &$content, $file ) {
 
 		// Strip round brackets
 		if ( $t[0] === "(" and $t[count( $t ) - 1] === ")" ) {
-			$t = array_splice( $t, 1, - 1 );
+			$t = array_splice( $t, 1, -1 );
 		}
 
 		if ( ! $t ) {
@@ -2135,7 +2135,7 @@ function find_includes( &$seetags, &$content, $file ) {
 			count( $t ) == 1 and
 			$t[0][0] === T_CONSTANT_ENCAPSED_STRING
 		) {
-			$includedfile = substr( $t[0][1], 1, - 1 );
+			$includedfile = substr( $t[0][1], 1, -1 );
 			$seetags[ $includedfile ][] = array( $file );
 			continue;
 		}
