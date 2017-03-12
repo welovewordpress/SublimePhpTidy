@@ -843,10 +843,10 @@ function replace_inline_tabs( &$tokens ) {
 	foreach ( $tokens as &$token ) {
 
 		if ( is_string( $token ) ) {
-			$text = & $token;
+			$text =& $token;
 		} else {
 			if ( token_is_taboo( $token ) ) continue;
-			$text = & $token[1];
+			$text =& $token[1];
 		}
 
 		// Replace one tab with one space
@@ -1281,10 +1281,15 @@ function add_operator_space( &$tokens ) {
 				// The next token is no whitespace
 				! ( isset( $tokens[ $key + 1 ][0] ) and $tokens[ $key + 1 ][0] === T_WHITESPACE )
 			) {
-				// Insert one space after
-				array_splice( $tokens, $key + 1, 0, array(
-						array( T_WHITESPACE, " " )
-					) );
+
+				$by_reference = isset( $tokens[ $key + 1 ] ) && ( '&' === $tokens[ $key + 1 ] );
+
+				if ( ! ( $by_reference && ( '=' === $token ) ) ) {
+					// Insert one space after
+					array_splice( $tokens, $key + 1, 0, array(
+							array( T_WHITESPACE, " " )
+						) );
+				}
 			}
 
 			if (
@@ -1926,11 +1931,11 @@ function indent( &$tokens ) {
 function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, $control_structure, $docblock, &$trinity_started ) {
 
 	if ( is_string( $tokens[ $key ] ) ) {
-		$text = & $tokens[ $key ];
+		$text =& $tokens[ $key ];
 		// If there is no line break it is only a inline string, not involved in indenting
 		if ( strpos( $text, "\n" ) === false ) return;
 	} else {
-		$text = & $tokens[ $key ][1];
+		$text =& $tokens[ $key ][1];
 		// If there is no line break it is only a inline string, not involved in indenting
 		if ( strpos( $text, "\n" ) === false ) return;
 		if ( token_is_taboo( $tokens[ $key ] ) ) return;
@@ -2065,9 +2070,9 @@ function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, 
 	if ( ! isset( $tokens[ $key + 1 ] ) ) return;
 
 	if ( is_string( $tokens[ $key + 1 ] ) ) {
-		$text2 = & $tokens[ $key + 1 ];
+		$text2 =& $tokens[ $key + 1 ];
 	} else {
-		$text2 = & $tokens[ $key + 1 ][1];
+		$text2 =& $tokens[ $key + 1 ][1];
 	}
 
 	// Remove indenting at beginning of the the next token
