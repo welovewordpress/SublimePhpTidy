@@ -99,6 +99,7 @@ $fix_comma_space = true;
 $fix_round_bracket_space = true;
 $fix_square_bracket_space = true;
 $add_operator_space = true;
+$fix_arithmetic_operator_space = true;
 $add_file_docblock = false;
 $add_function_docblocks = false;
 $add_doctags = false;
@@ -446,6 +447,7 @@ function phptidy( $source ) {
 	if ( $GLOBALS['fix_round_bracket_space'] ) fix_round_bracket_space( $tokens );
 	if ( $GLOBALS['fix_square_bracket_space'] ) fix_square_bracket_space( $tokens );
 	if ( $GLOBALS['add_operator_space'] ) add_operator_space( $tokens );
+	if ( $GLOBALS['fix_arithmetic_operator_space'] ) fix_arithmetic_operator_space( $tokens );
 
 	// PhpDocumentor
 	if ( $GLOBALS['add_doctags'] ) {
@@ -1277,17 +1279,17 @@ function add_operator_space( &$tokens ) {
 
 			if (
 				// The next token is no whitespace
-				! ( isset( $tokens[ $key+1 ][0] ) and $tokens[ $key+1 ][0] === T_WHITESPACE )
+				! ( isset( $tokens[ $key + 1 ][0] ) and $tokens[ $key + 1 ][0] === T_WHITESPACE )
 			) {
 				// Insert one space after
-				array_splice( $tokens, $key+1, 0, array(
+				array_splice( $tokens, $key + 1, 0, array(
 						array( T_WHITESPACE, " " )
 					) );
 			}
 
 			if (
 				// The token before is no whitespace
-				! ( isset( $tokens[ $key-1 ][0] ) and $tokens[ $key-1 ][0] === T_WHITESPACE )
+				! ( isset( $tokens[ $key - 1 ][0] ) and $tokens[ $key - 1 ][0] === T_WHITESPACE )
 			) {
 				// Insert one space before
 				array_splice( $tokens, $key, 0, array(
@@ -1298,6 +1300,73 @@ function add_operator_space( &$tokens ) {
 		}
 	}
 
+}
+
+/**
+ * Adds one space after and before arithmetic operators if needed.
+ *
+ * @param array $tokens Tokens (passed by reference).
+ */
+function fix_arithmetic_operator_space( &$tokens ) {
+
+	$operators = array(
+		'+',
+		'-',
+		'*',
+		'/',
+		'%',
+	);
+
+	$string_tokens = array( ')', ']' );
+	$array_tokens  = array(
+		T_VARIABLE,
+		T_LNUMBER,
+	);
+
+	foreach ( $tokens as $key => &$token ) {
+		$k               = $key;
+		$add_right_space = false;
+		$add_left_space  = false;
+		$previous        = false;
+
+		if ( ! ( is_string( $token ) && in_array( $token, $operators ) ) ) {
+			continue;
+		}
+
+		// Check whitespace before and after operator.
+		$left_whitespace  = isset( $tokens[ $k - 1 ][0] ) && ( T_WHITESPACE === $tokens[ $k - 1 ][0] );
+		$right_whitespace = isset( $tokens[ $k + 1 ][0] ) && ( T_WHITESPACE === $tokens[ $k + 1 ][0] );
+
+		if ( ! $left_whitespace  ) {
+			$previous = isset( $tokens[ $k - 1 ] ) ? $tokens[ $k - 1 ] : false;
+		} else {
+			// Get the next non whitespace token.
+			do {
+				--$k;
+			} while ( isset( $tokens[ $k ] ) and ( T_WHITESPACE === $tokens[ $k ][0] ) );
+			$previous = isset( $tokens[ $k ] ) ? $tokens[ $k ] : false;
+		}
+
+		if ( $previous && isset( $previous[0] ) && in_array( $previous[0], $array_tokens ) ) {
+			$add_right_space = ! $right_whitespace ? true : false;
+			if ( ! $left_whitespace ) {
+				$add_left_space = true;
+			}
+		} elseif ( $previous && is_string( $previous ) && in_array( $previous, $string_tokens ) ) {
+			$add_right_space = ! $right_whitespace ? true : false;
+			if ( ! $left_whitespace ) {
+				$add_left_space = true;
+			}
+		}
+
+		if ( $add_right_space ) {
+			array_splice( $tokens, $key + 1, 0, array( array( T_WHITESPACE, ' ' ) ) );
+		}
+
+		if ( $add_left_space ) {
+			array_splice( $tokens, $key, 0, array( array( T_WHITESPACE, ' ' ) ) );
+		}
+	}
 }
 
 /**
