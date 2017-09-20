@@ -1785,14 +1785,22 @@ function indent( &$tokens ) {
 	// Level of round brackets
 	$round_braces_count = 0;
 
+	$extra_indentation = 0;
+
 	$round_brace_opener = false;
 	$round_braces_control = 0;
+
+	// Array to remember what control structure was last opened
+	$control_structure_type = array();
 
 	// Number of opened control structures without curly brackets inside of a level of curly brackets
 	$control_structure = array( 0 );
 
 	$heredoc_started = false;
 	$trinity_started = false;
+
+
+	$tokens_with_blocks = array( T_IF, T_ELSE, T_ELSEIF, T_SWITCH, T_CLASS, T_INTERFACE, T_FUNCTION, T_DO, T_WHILE, T_CATCH, T_TRY, T_FOREACH );
 
 	foreach ( $tokens as $key => &$token ) {
 
@@ -1818,7 +1826,13 @@ function indent( &$tokens ) {
 					$token[0] !== T_WHITESPACE or
 					strpos( $token[1], "\n" ) !== false
 				) {
-					if     ( $tokens[ $key + 1 ] === "}" ) --$curly_braces_count;
+					if ( $tokens[ $key + 1 ] === "}" ) {
+						--$curly_braces_count;
+						// Remove the last token from out stack
+						if ( array_pop( $control_structure_type ) == T_SWITCH ) {
+							--$extra_indentation;
+						}
+					}
 					elseif ( $tokens[ $key + 1 ] === ")" ) --$round_braces_count;
 				}
 			} else {
@@ -1828,7 +1842,13 @@ function indent( &$tokens ) {
 					$tokens[ $key + 1 ][0] === T_WHITESPACE and
 					strpos( $tokens[ $key + 1 ][1], "\n" ) === false
 				) {
-					if     ( $tokens[ $key + 2 ] === "}" ) --$curly_braces_count;
+					if ( $tokens[ $key + 2 ] === "}" ) {
+						--$curly_braces_count;
+						// Remove the last token from out stack
+						if ( array_pop( $control_structure_type ) == T_SWITCH ) {
+							--$extra_indentation;
+						}
+					}
 					elseif ( $tokens[ $key + 2 ] === ")" ) --$round_braces_count;
 				}
 			}
@@ -1884,11 +1904,16 @@ function indent( &$tokens ) {
 			// After a command or a set of commands a control structure is closed.
 			if ( ! empty( $control_structure[ $curly_braces_count ] ) ) --$control_structure[ $curly_braces_count ];
 
+			if ( $token === "}" ) {
+
+			}
+
 		} else {
 			indent_text(
 				$tokens,
 				$key,
 				$curly_braces_count,
+				$extra_indentation,
 				$round_braces_count,
 				$control_structure,
 				( is_array( $token ) and $token[0] === T_DOC_COMMENT ),
@@ -1908,10 +1933,31 @@ function indent( &$tokens ) {
 			// If a curly bracket occurs, no command without brackets can follow.
 			if ( ! empty( $control_structure[ $curly_braces_count ] ) ) --$control_structure[ $curly_braces_count ];
 			++$curly_braces_count;
+
 			// Inside of the new level of curly brackets it starts with no control structure.
 			$control_structure[ $curly_braces_count ] = 0;
+
+			// Find the last taken that can have a block and add it to the stack
+			for ( $i = $key; $tokens > 0; $i-- ) {
+				if ( isset( $tokens[ $i ][0] ) ) {
+					if ( in_array( $tokens[ $i ][0], $tokens_with_blocks ) ) {
+						$control_structure_type[] = $tokens[ $i ][0];
+						break;
+					}
+				}
+			}
+
+			if ( end( $control_structure_type ) == T_SWITCH ) {
+				++$extra_indentation;
+			}
 		}
 
+		// Debugging code
+		/*echo "\nStack:\n";
+		foreach ($control_structure_type as $index => $structure) {
+			echo $index.". ";
+			echo token_name($structure)."\n";
+		} */
 	}
 
 }
@@ -1928,7 +1974,7 @@ function indent( &$tokens ) {
  * @param boolean $docblock
  * @param boolean $trinity_started    (reference)
  */
-function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, $control_structure, $docblock, &$trinity_started ) {
+function indent_text( &$tokens, $key, $curly_braces_count, $extra_indentation, $round_braces_count, $control_structure, $docblock, &$trinity_started ) {
 
 	if ( is_string( $tokens[ $key ] ) ) {
 		$text =& $tokens[ $key ];
@@ -1940,29 +1986,30 @@ function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, 
 		if ( strpos( $text, "\n" ) === false ) return;
 		if ( token_is_taboo( $tokens[ $key ] ) ) return;
 	}
-
 	$indent = $curly_braces_count + $round_braces_count;
 	for ( $i = 0; $i <= $curly_braces_count; ++$i ) {
 		$indent += $control_structure[ $i ];
 	}
 
+	$indent += $extra_indentation;
+
 	// One indentation level less for "switch ... case ... default"
-	// if (
-	//  isset( $tokens[ $key+1] ) and
-	//  is_array( $tokens[ $key+1] ) and (
-	//   $tokens[ $key+1][0] === T_CASE or
-	//   $tokens[ $key+1][0] === T_DEFAULT or (
-	//    isset( $tokens[ $key+2] ) and
-	//    is_array( $tokens[ $key+2] ) and (
-	//     $tokens[ $key+2][0] === T_CASE or
-	//     $tokens[ $key+2][0] === T_DEFAULT
-	//    ) and
-	//    // T_WHITESPACE without \n first
-	//    $tokens[ $key+1][0] === T_WHITESPACE and
-	//    strpos( $tokens[ $key+1][1], "\n" )===false
-	//   )
-	//  )
-	// ) --$indent;
+	if (
+		isset( $tokens[ $key + 1 ] ) and
+		is_array( $tokens[ $key + 1 ] ) and (
+			$tokens[ $key + 1 ][0] === T_CASE or
+			$tokens[ $key + 1 ][0] === T_DEFAULT or (
+				isset( $tokens[ $key + 2 ] ) and
+				is_array( $tokens[ $key + 2 ] ) and (
+					$tokens[ $key + 2 ][0] === T_CASE or
+					$tokens[ $key + 2 ][0] === T_DEFAULT
+				) and
+				// T_WHITESPACE without \n first
+				$tokens[ $key + 1 ][0] === T_WHITESPACE and
+				strpos( $tokens[ $key + 1 ][1], "\n" ) === false
+			)
+		)
+	) --$indent;
 
 	// One indentation level less for an opening curly brace on a seperate line
 	if (
@@ -2029,7 +2076,9 @@ function indent_text( &$tokens, $key, $curly_braces_count, $round_braces_count, 
 			".",
 			array( T_CONCAT_EQUAL, ".=" ),
 			// type
-			array( T_INSTANCEOF, "instanceof" )
+			array( T_INSTANCEOF, "instanceof" ),
+			// object
+			array( T_OBJECT_OPERATOR, "->" )
 		);
 
 		if (
